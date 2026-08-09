@@ -1,0 +1,67 @@
+name: Validate Runbook PR
+
+on:
+  pull_request:
+    paths:
+      - "runbooks/**"
+      - "attestations/**"
+      - "schemas/**"
+      - "manifest.yaml"
+      - "registry/**"
+  push:
+    paths:
+      - "runbooks/**"
+      - "attestations/**"
+      - "schemas/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install jsonschema pyyaml
+
+      - name: Schema + structure validation
+        run: python3 scripts/validate.py .
+
+      - name: Secret / sensitive sanitizer
+        run: python3 scripts/sanitize.py --strict .
+
+      - name: Risk scan
+        run: python3 scripts/risk_scan.py .
+
+      - name: Repo existence check (runbooks)
+        run: |
+          for manifest in $(find runbooks -name manifest.yaml); do
+            repo=$(python3 -c "import yaml,sys;print(yaml.safe_load(open('$manifest'))['repo'])")
+            python3 scripts/check_repo.py "$repo" || exit 1
+          done
+
+      - name: Rebuild registry and check clean
+        run: |
+          python3 scripts/build_registry.py
+          git diff --exit-code registry/index.json || (echo "registry/index.json out of date — run build_registry.py and commit" && exit 1)
+
+  build-registry:
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build registry
+        run: python3 scripts/build_registry.py
+      - name: Commit registry
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add registry/index.json
+          git diff --cached --quiet || (git commit -m "chore: rebuild registry index" && git push)

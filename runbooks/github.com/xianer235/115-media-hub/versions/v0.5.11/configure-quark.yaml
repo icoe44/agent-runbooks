@@ -1,0 +1,131 @@
+schema_version: 1
+
+repo:
+  owner: xianer235
+  name: 115-media-hub
+
+upstream_ref:
+  type: tag
+  value: v0.5.11
+
+goal:
+  id: configure_quark
+  description: >
+    配置夸克网盘 Cookie 与 PanSou 搜索源，使 115MH 能自动搜索并转存到夸克。
+    验证 Cookie 有效性。
+
+environment:
+  os:
+    family: linux
+    tested:
+      - ubuntu-24.04
+  runtime:
+    docker: "27.x"
+  architecture:
+    - amd64
+
+prerequisites:
+  - 已部署 115MH（见 deploy runbook）
+  - 有效夸克 Cookie
+  - 运行中的 PanSou
+
+secrets:
+  required:
+    - name: QUARK_COOKIE
+      storage: user_environment
+      never_persist: true
+
+steps:
+  - id: write_cookie_config
+    action: file_write
+    path: /app/config/settings.json (容器内) / config/settings.json (宿主机卷)
+    description: >
+      将 QUARK_COOKIE 写入 settings.json 的 cookie_quark 字段，
+      并设置 pansou_enabled=true, pansou_base_url=http://pansou:8888。
+      文件为 root 所有，需 sudo 写。
+    evidence:
+      type: RUNTIME
+
+  - id: restart_container
+    action: shell
+    command: docker compose restart media-hub
+    description: 让配置重载
+    evidence:
+      type: RUNTIME
+
+  - id: login_webui
+    action: http_request
+    method: POST
+    path: /login
+    payload_example:
+      username: admin
+      password: "<ADMIN_PASSWORD>"
+    description: 首次未设密码，需重置 settings.json 的 pbkdf2 hash
+    evidence:
+      type: RUNTIME
+
+  - id: check_cookie
+    action: http_request
+    method: POST
+    path: /settings/cookies/check
+    payload_example:
+      providers: ["quark"]
+      force: true
+    description: 返回 quark.state == "valid" 表示 Cookie 有效
+    evidence:
+      type: RUNTIME
+
+  - id: verify_quark_api
+    action: shell
+    description: >
+      容器内直接调 list_quark_entries(cookie) 验证 Cookie 能列目录，
+      返回条目数 > 0 即有效。
+    evidence:
+      type: RUNTIME
+
+verification:
+  - type: api
+    description: /settings/cookies/check 返回 quark.state=valid
+  - type: runtime
+    description: 容器内 list_quark_entries 能列出根目录条目
+
+known_traps:
+  - description: >
+      settings.json 由容器以 root 创建，宿主写需 sudo，
+      否则 PermissionError。
+    severity: medium
+    evidence:
+      type: RUNTIME
+  - description: >
+      probe_quark_connectivity 只测网络连通（3 个 URL 200/404 均 ok:true），
+      不等于 Cookie 有效。真正的有效性要调 list_quark_entries。
+    severity: medium
+    evidence:
+      type: RUNTIME
+  - description: >
+      未设过 WebUI 密码时，settings.json 里是 pbkdf2 hash，
+      需用 hash_password() 重置后才能登录。
+    severity: medium
+    evidence:
+      type: RUNTIME
+
+capabilities:
+  - claim: 从 CookieCloud 自建服务解密夸克 Cookie（自定义 legacy 算法）
+    status: confirmed
+    evidence_level: RUNTIME
+  - claim: 夸克 Cookie 有效性检测（list_quark_entries）
+    status: confirmed
+    evidence_level: RUNTIME
+
+unknowns:
+  - CookieCloud 标准算法与自建 custom legacy 的差异范围
+
+last_verified:
+  at: "2026-08-09T22:30:00+08:00"
+  execution:
+    result: success
+    notes: quark.state=valid，list_quark_entries 列出 16 条根目录
+
+trust:
+  status: verified
+  risk_level: 1

@@ -1,0 +1,22 @@
+{
+  "xianer235/115-media-hub": {
+    "latest_known_upstream": null,
+    "runbooks": {
+      "deploy@v0.5.11": {
+        "status": "community",
+        "hash": "sha256:e2a283ce8a1326e20b4b650e514945a7537606868b666c37f2f5f6634c78a70e",
+        "path": "runbooks/github.com/xianer235/115-media-hub/versions/v0.5.11/deploy.yaml"
+      },
+      "create-subscription@v0.5.11": {
+        "status": "community",
+        "hash": "sha256:f5c28f4cc6016fe97fd02cdebece62c115b9cab6d76941950f5983991093f09d",
+        "path": "runbooks/github.com/xianer235/115-media-hub/versions/v0.5.11/create-subscription.yaml"
+      },
+      "configure-quark@v0.5.11": {
+        "status": "community",
+        "hash": "sha256:062d57d7f8b61cb76006e87d3142504436ec07255c2e249b7e04edea95e1ae48",
+        "path": "runbooks/github.com/xianer235/115-media-hub/versions/v0.5.11/configure-quark.yaml"
+      }
+    }
+  }
+}

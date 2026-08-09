@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Attestation",
+  "description": "Agent verification record after using a runbook. Splits safety into multiple dimensions rather than a single vague SAFE flag.",
+  "type": "object",
+  "required": [
+    "schema_version", "runbook_hash", "repo", "upstream_ref",
+    "tested_at", "environment", "result", "checks", "differences", "agent"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "runbook_hash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "repo": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+    "upstream_ref": { "type": "string" },
+    "tested_at": { "type": "string", "format": "date-time" },
+    "environment": {
+      "type": "object",
+      "required": ["os", "arch"],
+      "additionalProperties": true,
+      "properties": {
+        "os": { "type": "string" },
+        "arch": { "type": "string" }
+      }
+    },
+    "result": { "type": "string", "enum": ["success", "partial", "failed"] },
+    "checks": {
+      "type": "object",
+      "required": ["runtime_verified"],
+      "additionalProperties": true,
+      "properties": {
+        "runtime_verified": { "type": "boolean" },
+        "no_secret_exfiltration": { "type": "boolean" },
+        "no_destructive_command": { "type": "boolean" },
+        "no_privilege_escalation": { "type": "boolean" },
+        "no_external_binary_download": { "type": "boolean" },
+        "no_unexpected_network_destination": { "type": "boolean" },
+        "no_system_config_modification": { "type": "boolean" },
+        "instructions_match_runtime": { "type": "boolean" }
+      }
+    },
+    "differences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "expected", "actual"],
+        "additionalProperties": false,
+        "properties": {
+          "field": { "type": "string" },
+          "expected": { "type": "string" },
+          "actual": { "type": "string" }
+        }
+      }
+    },
+    "notes": { "type": "string" },
+    "agent": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": true,
+      "properties": {
+        "type": { "type": "string" },
+        "id": { "type": "string" }
+      }
+    }
+  }
+}

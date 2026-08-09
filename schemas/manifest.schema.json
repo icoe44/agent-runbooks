@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Project Manifest",
+  "description": "Manifest for a GitHub project in the Agent Runbook Registry. Evidence first — no hallucinated features.",
+  "type": "object",
+  "required": ["repo", "github", "project", "upstream", "runbooks", "last_checked"],
+  "additionalProperties": false,
+  "properties": {
+    "repo": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+      "description": "owner/name"
+    },
+    "github": {
+      "type": "object",
+      "required": ["url"],
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://github\\.com/"
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "required": ["name", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "description": {
+          "type": "string",
+          "description": "Extracted from upstream public materials. Do NOT invent features."
+        },
+        "description_source": {
+          "type": "string",
+          "enum": ["official_readme", "official_docs", "official_release", "official_wiki", "generated_summary"]
+        }
+      }
+    },
+    "upstream": {
+      "type": "object",
+      "required": ["default_branch"],
+      "additionalProperties": false,
+      "properties": {
+        "default_branch": { "type": "string" },
+        "latest_tag": { "type": "string" }
+      }
+    },
+    "runbooks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["goal"],
+        "additionalProperties": false,
+        "properties": {
+          "goal": { "type": "string" }
+        }
+      }
+    },
+    "last_checked": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

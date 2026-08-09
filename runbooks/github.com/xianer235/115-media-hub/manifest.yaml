@@ -1,0 +1,22 @@
+repo: xianer235/115-media-hub
+
+github:
+  url: https://github.com/xianer235/115-media-hub
+
+project:
+  name: 115 Media Hub
+  description: >
+    基于 FastAPI 的媒体自动化管理面板，集成 115/Quark/天翼/123/阿里 多网盘转存、
+    TG 资源同步、影视订阅追更、刮削管理。本 Runbook 聚焦 Quark-only 用法。
+  description_source: official_readme
+
+upstream:
+  default_branch: main
+  latest_tag: v0.5.11
+
+runbooks:
+  - goal: deploy
+  - goal: configure_quark
+  - goal: create_subscription
+
+last_checked: "2026-08-09T22:30:00+08:00"

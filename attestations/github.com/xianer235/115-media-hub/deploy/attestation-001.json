@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "runbook_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "repo": "xianer235/115-media-hub",
+  "upstream_ref": "v0.5.11",
+  "tested_at": "2026-08-09T22:30:00+08:00",
+  "environment": {
+    "os": "Ubuntu 24.04",
+    "arch": "amd64",
+    "docker": "27.2",
+    "docker_compose": "v5.3.1"
+  },
+  "result": "partial",
+  "checks": {
+    "runtime_verified": true,
+    "no_secret_exfiltration_detected": true,
+    "no_destructive_command_detected": true,
+    "no_privilege_escalation_detected": true,
+    "no_external_binary_download_detected": true,
+    "no_unexpected_network_destination_detected": true,
+    "no_system_config_modification_detected": true,
+    "instructions_match_runtime": true
+  },
+  "differences": [
+    {
+      "field": "subscription_result",
+      "expected": "quark_transfer_complete",
+      "actual": "candidates_found_but_not_transferred (resource naming did not match missing episodes)"
+    }
+  ],
+  "notes": "deploy + configure-quark verified (success). create-subscription partially verified: PanSou found 4 quark candidates and fine-scanned them, but no transfer because resource files did not match target E1-E6. Quark actual-transfer loop still pending.",
+  "agent": {
+    "type": "coding-agent",
+    "id": "hermes-agent"
+  }
+}

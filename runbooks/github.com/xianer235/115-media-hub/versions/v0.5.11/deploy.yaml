@@ -1,0 +1,130 @@
+schema_version: 1
+
+repo:
+  owner: xianer235
+  name: 115-media-hub
+
+upstream_ref:
+  type: tag
+  value: v0.5.11
+
+goal:
+  id: deploy
+  description: >
+    使用 Docker Compose 部署 115 Media Hub + PanSou，Quark-only 用法，
+    不含 Emby / STRM / PT。数据与配置持久化到宿主机卷。
+
+environment:
+  os:
+    family: linux
+    tested:
+      - ubuntu-24.04
+  runtime:
+    docker: "27.x"
+    docker_compose: "v5.x"
+  architecture:
+    - amd64
+
+prerequisites:
+  - docker
+  - docker compose
+  - 可访问 ghcr.io 和 docker.io 拉取镜像
+  - 18081 端口未被占用（本机 18080 可能被其他服务占用）
+
+secrets:
+  required:
+    - name: QUARK_COOKIE
+      storage: config_file
+      never_persist: true
+
+steps:
+  - id: create_dir
+    action: shell
+    command: mkdir -p /home/clawd/media-hub
+    evidence:
+      type: RUNTIME
+
+  - id: write_compose
+    action: file_write
+    path: /home/clawd/media-hub/docker-compose.yml
+    description: >
+      两个服务：pansou (8888) + media-hub (宿主机 18081 -> 容器 18080)。
+      持久化卷 config/ logs/ strm/ pansou-data/。
+      注意：宿主机 18080 若被占用（如 sub_server.py），映射到 18081。
+    evidence:
+      type: RUNTIME
+
+  - id: pull_images
+    action: shell
+    command: docker pull ghcr.io/fish2018/pansou:latest && docker pull xianer235/115-media-hub:latest
+    evidence:
+      type: RUNTIME
+
+  - id: start_compose
+    action: shell
+    command: docker compose up -d
+    evidence:
+      type: RUNTIME
+
+  - id: verify_ui
+    action: http_request
+    method: GET
+    path: /login
+    description: 应返回 HTTP 200（307 重定向到 /login 属正常）
+    evidence:
+      type: RUNTIME
+
+  - id: verify_pansou
+    action: http_request
+    method: GET
+    path: /api/search?kw=test
+    description: 返回 JSON，code=0，能列出网盘资源类型
+    evidence:
+      type: RUNTIME
+
+verification:
+  - type: runtime
+    description: docker ps 显示两个容器 Up
+  - type: api
+    description: 115MH /login 返回 200
+  - type: api
+    description: PanSou /api/search 返回 code=0
+
+known_traps:
+  - description: >
+      宿主机 18080 可能被其它服务占用（如 proxy-stack 的 sub_server.py）。
+      compose 中应映射 18081 -> 18080，而不是盲目用 18080。
+    severity: medium
+    evidence:
+      type: RUNTIME
+  - description: >
+      容器镜像无内置 curl，测试容器间网络用 python3 urllib，
+      而非 curl（会报 curl: not found）。
+    severity: low
+    evidence:
+      type: RUNTIME
+
+capabilities:
+  - claim: 单容器部署，无额外必装服务
+    status: confirmed
+    evidence_level: RUNTIME
+  - claim: PanSou 作为网盘聚合搜索源接入
+    status: confirmed
+    evidence_level: RUNTIME
+  - claim: 容器间网络通过 compose 网络名（如 pansou）互通
+    status: confirmed
+    evidence_level: RUNTIME
+
+unknowns:
+  - 多 Quark 账号是否支持
+  - TrueNAS Scale 上的部署差异
+
+last_verified:
+  at: "2026-08-09T22:30:00+08:00"
+  execution:
+    result: success
+    notes: 两个容器 Up，/login 200，PanSou 搜索返回夸克资源
+
+trust:
+  status: verified
+  risk_level: 1

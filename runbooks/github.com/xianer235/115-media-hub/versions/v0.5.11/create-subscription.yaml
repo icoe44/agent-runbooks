@@ -1,0 +1,150 @@
+schema_version: 1
+
+repo:
+  owner: xianer235
+  name: 115-media-hub
+
+upstream_ref:
+  type: tag
+  value: v0.5.11
+
+goal:
+  id: create_quark_subscription
+  description: >
+    创建以 Quark 为目标 Provider 的影视订阅任务，自动搜索资源并转存到夸克。
+    这是 Runbook #0001 的核心验证目标。
+
+environment:
+  os:
+    family: linux
+    tested:
+      - ubuntu-24.04
+  runtime:
+    docker: "27.x"
+  architecture:
+    - amd64
+
+prerequisites:
+  - 已配置夸克 Cookie + PanSou（见 configure-quark）
+  - WebUI 登录态（cookie jar）
+
+secrets:
+  required:
+    - name: QUARK_COOKIE
+      storage: user_environment
+      never_persist: true
+    - name: ADMIN_PASSWORD
+      storage: user_environment
+      never_persist: true
+
+steps:
+  - id: save_subscription
+    action: http_request
+    method: POST
+    path: /subscription/save
+    payload_example:
+      tasks:
+        - media_type: tv
+          provider: quark
+          title: "<MEDIA_TITLE>"
+          aliases: "<ALIASES>"
+          quality_priority: balanced
+          min_score: 55
+          min_file_size_mb: 200
+          exclude_keywords: 短剧,解说,预告
+          schedule_weekdays: [1,2,3,4,5,6,7]
+          schedule_start_time: "00:00"
+          schedule_end_time: "23:59"
+          schedule_interval_minutes: 120
+          total_episodes: 6
+          season: 1
+          savepath: 影视/<MEDIA_TITLE>
+    description: >
+      必须用 /subscription/save 且 task 含 savepath。
+      返回 ok:true 且 tasks 含新建条目即成功。
+    evidence:
+      type: RUNTIME
+      source:
+        repo: xianer235/115-media-hub
+        ref: v0.5.11
+        path: app/routes/subscription.py
+
+  - id: start_subscription
+    action: http_request
+    method: POST
+    path: /subscription/start
+    payload_example:
+      name: "<MEDIA_TITLE>"
+    description: 返回 {ok:true, status:queued}
+    evidence:
+      type: RUNTIME
+
+  - id: check_logs
+    action: http_request
+    method: GET
+    path: /subscription/logs
+    description: >
+      观察执行日志：搜索候选 -> 精查 -> 缺失集匹配。
+      候选"未命中缺失集"属正常行为（资源命名不规范时不盲转）。
+    evidence:
+      type: RUNTIME
+
+verification:
+  - type: api
+    description: /subscription/save 返回 ok:true 且 subscription_tasks 数增加
+  - type: runtime
+    description: 日志显示 PanSou 搜索到候选资源并进入精细筛选
+  - type: api
+    description: (完整闭环) 转存后目标夸克目录文件存在
+
+known_traps:
+  - description: >
+      POST /save_settings 返回 ok:true 但不会真正创建订阅任务
+      （subscription_tasks 保持为空）。创建订阅必须用
+      POST /subscription/save，且字段为 savepath（不是 save_dir）。
+    severity: high
+    evidence:
+      type: RUNTIME
+  - description: >
+      订阅任务字段 savepath 缺失会返回 400 "任务未填写保存路径"。
+    severity: medium
+    evidence:
+      type: RUNTIME
+  - description: >
+      质量筛选仅有：分辨率优先级(quality_priority)、最小体积(min_file_size_mb)、
+      排除词(exclude_keywords)、评分阈值(min_score)。HEVC/HDR/REMUX/字幕
+      标签只能识别展示，不能硬性排除筛选。
+    severity: low
+    evidence:
+      type: SOURCE
+
+capabilities:
+  - claim: 自动周期搜索候选资源（默认2小时/次，可配1min）
+    status: confirmed
+    evidence_level: RUNTIME
+  - claim: 缺失集识别与账本去重（避免重复转存）
+    status: confirmed
+    evidence_level: RUNTIME
+  - claim: 资源失效后重搜（失效缓存 + 周期重搜 + 固定链接强制重导）
+    status: confirmed
+    evidence_level: SOURCE
+  - claim: HEVC 优先硬性筛选
+    status: unsupported_or_unconfirmed
+    evidence_level: SOURCE
+
+unknowns:
+  - 原分享失效后是否强制重新搜索其它资源（逻辑存在但未在本机完整触发验证）
+  - 多 Quark Account 是否支持
+
+last_verified:
+  at: "2026-08-09T22:30:00+08:00"
+  execution:
+    result: partial
+    notes: >
+      订阅→搜索→候选匹配链路已跑通（搜到4条夸克候选并精查）。
+      未实际落盘：候选资源命名不规范，系统正确跳过。
+      Quark 实际转存闭环待验证。
+
+trust:
+  status: community
+  risk_level: 1

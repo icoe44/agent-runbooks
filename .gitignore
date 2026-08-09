@@ -1,0 +1,17 @@
+# Sensitive / local
+.env
+*.cookie
+*_cookie*.txt
+!attestations/**/*.json
+secrets/
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
