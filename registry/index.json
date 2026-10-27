@@ -1,6 +1,6 @@
 {
   "xianer235/115-media-hub": {
-    "latest_known_upstream": "v0.15.8",
+    "latest_known_upstream": "v0.15.10",
     "runbooks": {
       "configure-quark@v0.5.11": {
         "status": "community",
