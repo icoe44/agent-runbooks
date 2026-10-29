@@ -2,11 +2,6 @@
   "xianer235/115-media-hub": {
     "latest_known_upstream": "v0.15.10",
     "runbooks": {
-      "configure-quark@v0.5.11": {
-        "status": "community",
-        "hash": "sha256:fff47a1a649249241ca4c971b1aa21f5aac1abc8fd937be2e695584d50f7ce0a",
-        "path": "runbooks/github.com/xianer235/115-media-hub/versions/v0.5.11/configure-quark.yaml"
-      },
       "create-subscription@v0.5.11": {
         "status": "community",
         "hash": "sha256:b8c3bea3daee7a4aea846fe8f1c2e0561006e514ef23eda640bf7869b0d874c0",
@@ -16,6 +11,11 @@
         "status": "community",
         "hash": "sha256:23363865fae924213c3a3d88bdfcc121674ba2f5e6018e6d4f88c62c11aeb8dd",
         "path": "runbooks/github.com/xianer235/115-media-hub/versions/v0.5.11/deploy.yaml"
+      },
+      "configure-quark@v0.5.11": {
+        "status": "community",
+        "hash": "sha256:fff47a1a649249241ca4c971b1aa21f5aac1abc8fd937be2e695584d50f7ce0a",
+        "path": "runbooks/github.com/xianer235/115-media-hub/versions/v0.5.11/configure-quark.yaml"
       }
     }
   }
