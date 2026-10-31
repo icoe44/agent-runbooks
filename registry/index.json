@@ -1,6 +1,6 @@
 {
   "xianer235/115-media-hub": {
-    "latest_known_upstream": "v0.15.10",
+    "latest_known_upstream": "v0.15.11",
     "runbooks": {
       "create-subscription@v0.5.11": {
         "status": "community",
